@@ -99,6 +99,80 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/enrollCourses/:email", async (req, res) => {
+      const email = req.params.email;
+      const data = req.body;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      if (user.enrolledCourses && user.enrolledCourses.includes(data._id)) {
+        res.status(400).json({ message: "Already enrolled in the tournament" });
+        return;
+      }
+      const updateUserInfo = {
+        $push: {
+          enrolledCourses: data._id,
+        },
+      };
+      const result = await usersCollection.updateOne(query, updateUserInfo);
+      res.send(result);
+    });
+
+    app.get("/enrolledCourses/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        if (!user) {
+          res.status(404).json({ message: "User not found" });
+          return;
+        }
+        res.json({ enrolledCourses: user.enrolledCourses });
+      } catch (error) {
+        console.error("Error fetching Get Bookmark games:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
+    app.patch("/bookmarkedCourse/:email", async (req, res) => {
+      const email = req.params.email;
+      const data = req.body;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      if (user.bookmarkedCourse && user.bookmarkedCourse.includes(data._id)) {
+        res.status(400).json({ message: "Already enrolled in the tournament" });
+        return;
+      }
+      const updateUserInfo = {
+        $push: {
+          bookmarkedCourse: data._id,
+        },
+      };
+      const result = await usersCollection.updateOne(query, updateUserInfo);
+      res.send(result);
+    });
+
+    app.get("/bookmarkedCourse/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        if (!user) {
+          res.status(404).json({ message: "User not found" });
+          return;
+        }
+        res.json({ bookmarkedCourse: user.bookmarkedCourse });
+      } catch (error) {
+        console.error("Error fetching Get Bookmark games:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
