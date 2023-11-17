@@ -46,6 +46,7 @@ async function run() {
 
     const usersCollection = client.db("knowVibe").collection("users");
     const courseCollection = client.db("knowVibe").collection("courses");
+    const instructorsCollection = client.db("knowVibe").collection("instructors");
 
     app.post("/jwt", (req, res) => {
       const email = req.query.email;
@@ -98,7 +99,7 @@ async function run() {
       const result = await courseCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
     });
-
+    
     app.patch("/enrollCourses/:email", async (req, res) => {
       const email = req.params.email;
       const data = req.body;
@@ -120,7 +121,7 @@ async function run() {
       const result = await usersCollection.updateOne(query, updateUserInfo);
       res.send(result);
     });
-
+    
     app.get("/enrolledCourses/:email", async (req, res) => {
       try {
         const email = req.params.email;
@@ -157,7 +158,7 @@ async function run() {
       const result = await usersCollection.updateOne(query, updateUserInfo);
       res.send(result);
     });
-
+    
     app.get("/bookmarkedCourse/:email", async (req, res) => {
       try {
         const email = req.params.email;
@@ -173,18 +174,59 @@ async function run() {
         res.status(500).json({ message: "Internal Server Error" });
       }
     });
+    app.get("/instructors", async (req, res) => {
+      const result = await instructorsCollection.find().toArray();
+      res.send(result);
+    });
+    
+    app.get("/instructors/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await instructorsCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    app.post("/add-class", async (req, res) => {
+      const data = req.body;
+      const newClass = {
+        class_name: data.class_name,
+        class_image: data.class_image,
+        instructor_name: data.instructor_name,
+        instructor_email: data.instructor_email,
+        avilable_seats: parseFloat(data.avilable_seats),
+        price: parseFloat(data.price),
+        status: "pending",
+        student_enroll: 0,
+        feedback: "",
+      };
+
+      const instructor = await instructorsCollection.findOne({
+        email: data.instructor_email,
+      });
+
+      if (!instructor) {
+        await instructorsCollection.insertOne({
+          name: data.instructor_name,
+          image: data.instructor_photo,
+          email: data.instructor_email,
+        });
+      }
+
+      const result = await courseCollection.insertOne(newClass);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // client.close();
+      );
+    } finally {
+      // Ensures that the client will close when you finish/error
+      // client.close();
+    }
   }
-}
-run().catch(console.dir);
-
+  run().catch(console.dir);
+  
 app.get("/", (req, res) => {
   res.send("Server is running well");
 });
